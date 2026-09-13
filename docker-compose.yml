@@ -1,0 +1,134 @@
+name: 23-signal-watch
+x-app: &app
+  build:
+    context: .
+    target: runtime
+  init: true
+  restart: unless-stopped
+x-environment: &environment
+  DATABASE_URL: postgresql+asyncpg://signal:signal@database:5432/signal
+  REDIS_URL: redis://redis:6379/0
+  RABBITMQ_URL: amqp://signal:signal@rabbitmq:5672/
+  ADMIN_TOKEN: ${ADMIN_TOKEN:-local-demo-signalwatch-admin-change-before-deployment}
+  INGEST_TOKEN: ${INGEST_TOKEN:-local-demo-signalwatch-ingest-change-before-deployment}
+  ARTIFACT_PATH: /app/artifacts
+x-postgres: &postgres
+  image: postgres:17-alpine
+  environment:
+    POSTGRES_DB: signal
+    POSTGRES_USER: signal
+    POSTGRES_PASSWORD: signal
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U signal -d signal"]
+    interval: 2s
+    timeout: 3s
+    retries: 40
+x-rabbit: &rabbit
+  image: rabbitmq:4.1-alpine
+  environment:
+    RABBITMQ_DEFAULT_USER: signal
+    RABBITMQ_DEFAULT_PASS: signal
+  healthcheck:
+    test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+    interval: 5s
+    timeout: 5s
+    retries: 30
+x-redis: &redis
+  image: redis:7.4-alpine
+  healthcheck:
+    test: ["CMD", "redis-cli", "ping"]
+    interval: 2s
+    timeout: 3s
+    retries: 40
+services:
+  database:
+    <<: *postgres
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
+    restart: unless-stopped
+  rabbitmq:
+    <<: *rabbit
+    volumes: ["rabbit_data:/var/lib/rabbitmq"]
+    restart: unless-stopped
+  redis:
+    <<: *redis
+    restart: unless-stopped
+  migrate:
+    <<: *app
+    restart: "no"
+    environment: *environment
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      database:
+        condition: service_healthy
+  api:
+    <<: *app
+    environment: *environment
+    ports: ["127.0.0.1:8230:8000"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+  worker:
+    <<: *app
+    environment:
+      <<: *environment
+      WORKER_BEFORE_COMMIT_DELAY: ${WORKER_BEFORE_COMMIT_DELAY:-0}
+    command: ["python", "-m", "signalwatch.worker"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "scripts/process_health.py", "worker"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+  dispatcher:
+    <<: *app
+    environment:
+      <<: *environment
+      DISPATCHER_AFTER_PUBLISH_DELAY: ${DISPATCHER_AFTER_PUBLISH_DELAY:-0}
+    command: ["python", "-m", "signalwatch.dispatcher"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "scripts/process_health.py", "dispatcher"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+  test-db:
+    <<: *postgres
+    profiles: ["test"]
+    tmpfs: [/var/lib/postgresql/data]
+  test-redis:
+    <<: *redis
+    profiles: ["test"]
+  test-rabbitmq:
+    <<: *rabbit
+    profiles: ["test"]
+    tmpfs: [/var/lib/rabbitmq]
+  test:
+    profiles: ["test"]
+    build:
+      context: .
+      target: test
+    init: true
+    environment:
+      DATABASE_URL: postgresql+asyncpg://signal:signal@test-db:5432/signal
+      REDIS_URL: redis://test-redis:6379/0
+      RABBITMQ_URL: amqp://signal:signal@test-rabbitmq:5672/
+      TESTING: "true"
+    depends_on:
+      test-db:
+        condition: service_healthy
+      test-redis:
+        condition: service_healthy
+      test-rabbitmq:
+        condition: service_healthy
+volumes:
+  postgres_data:
+  rabbit_data:

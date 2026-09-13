@@ -1,0 +1,215 @@
+{
+  "schema_version": 1,
+  "selected_policy": "rules",
+  "policy_selection": {
+    "split": "dev",
+    "criteria": [
+      "FPR <= budget",
+      "maximum recall",
+      "maximum precision",
+      "rules on a tie"
+    ]
+  },
+  "model_type": "sklearn.ensemble.IsolationForest",
+  "model_sha256": "83658dd570c22e8d5368e03a866b9059d70804f32092456790e22be973344e8b",
+  "feature_contract": {
+    "names": [
+      "actor_requests_60s",
+      "actor_failures_300s",
+      "actor_failure_ratio_300s",
+      "actor_countries_300s",
+      "source_signups_300s",
+      "source_actors_300s",
+      "actor_bytes_60s"
+    ],
+    "version": "event-time-v1",
+    "window_seconds": 300,
+    "allowed_lateness_seconds": 30
+  },
+  "rule_policy": {
+    "version": "fixed-ratios-v1",
+    "limits": {
+      "requests_60s": 30,
+      "failed_requests_300s": 6,
+      "additional_countries_300s": 2,
+      "source_signups_300s": 12,
+      "additional_source_actors_300s": 20,
+      "source_actor_baseline": 4,
+      "bytes_60s": 1000000
+    }
+  },
+  "preprocessing": "log1p-float32",
+  "score_definition": "negative IsolationForest.score_samples; higher means more unusual, not attack probability",
+  "comparison": ">",
+  "thresholds": {
+    "model": 0.6659081381307633,
+    "rules": 0.5
+  },
+  "threshold_selection": {
+    "split": "dev",
+    "labels_used": "negatives only",
+    "maximum_empirical_fpr": 0.01,
+    "positive_labels_used_for_thresholds": false
+  },
+  "training": {
+    "generator_version": "synthetic-event-stream-v1",
+    "seed": 20260913,
+    "split": "train",
+    "normal_only": true,
+    "n_estimators": 160,
+    "max_samples": 256,
+    "contamination": "auto",
+    "dataset": {
+      "train": {
+        "event_count": 10000,
+        "positive_count": 0,
+        "start": 1767225600.104565,
+        "end": 1767229199.495188,
+        "sha256": "1fbc72355129331f54b4c2b5073eda310d24ea74eedd922572503578425711a3",
+        "scenarios": {
+          "normal": 10000
+        }
+      },
+      "dev": {
+        "event_count": 6120,
+        "positive_count": 120,
+        "start": 1767312000.000121,
+        "end": 1767314399.194494,
+        "sha256": "f5c92816b5881613fe845aab3caef28f75b5d8ae73b148c9e5f578c8781f2f40",
+        "scenarios": {
+          "normal": 6000,
+          "low_and_slow": 12,
+          "password_guessing": 32,
+          "api_burst": 48,
+          "signup_farm": 28
+        }
+      },
+      "test": {
+        "event_count": 6120,
+        "positive_count": 120,
+        "start": 1767398400.489551,
+        "end": 1767400599.695692,
+        "sha256": "8ba618ba98750b02a6eb00b510ccb07a57242c27e0361fd52994d9e9df9341b8",
+        "scenarios": {
+          "normal": 6000,
+          "low_and_slow": 12,
+          "password_guessing": 32,
+          "api_burst": 48,
+          "signup_farm": 28
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "scikit_learn": "1.9.1",
+    "numpy": "2.5.3",
+    "joblib": "1.6.0"
+  },
+  "drift_reference": {
+    "sample_count": 10000,
+    "smoothing_count": 0.5,
+    "minimum_samples": 100,
+    "warning_psi": 0.2,
+    "features": {
+      "actor_requests_60s": {
+        "cuts": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0,
+          6.0
+        ],
+        "counts": [
+          0,
+          1584,
+          2363,
+          2212,
+          1609,
+          986,
+          1246
+        ]
+      },
+      "actor_failures_300s": {
+        "cuts": [
+          0.0,
+          1.0
+        ],
+        "counts": [
+          0,
+          7841,
+          2159
+        ]
+      },
+      "actor_failure_ratio_300s": {
+        "cuts": [
+          0.0,
+          0.03571428571428571,
+          0.08333333333333333
+        ],
+        "counts": [
+          0,
+          7997,
+          931,
+          1072
+        ]
+      },
+      "actor_countries_300s": {
+        "cuts": [
+          1.0
+        ],
+        "counts": [
+          0,
+          10000
+        ]
+      },
+      "source_signups_300s": {
+        "cuts": [
+          0.0,
+          1.0
+        ],
+        "counts": [
+          0,
+          7333,
+          2667
+        ]
+      },
+      "source_actors_300s": {
+        "cuts": [
+          3.0
+        ],
+        "counts": [
+          278,
+          9722
+        ]
+      },
+      "actor_bytes_60s": {
+        "cuts": [
+          1154.8000000000002,
+          2346.0,
+          3491.7000000000003,
+          4782.800000000001,
+          6394.0,
+          8166.600000000002,
+          10451.600000000002,
+          13777.600000000006,
+          20905.600000000006
+        ],
+        "counts": [
+          1000,
+          999,
+          1001,
+          1000,
+          998,
+          1002,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    }
+  },
+  "trust": "Load only artifacts from the trusted local repository. SHA detects corruption, not a malicious replacement of model and manifest together.",
+  "identity": "ae55176c5400d6d105b9e0923045519725241a1c20ac6336fb36305588bbcfbd"
+}

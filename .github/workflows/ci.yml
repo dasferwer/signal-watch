@@ -1,0 +1,33 @@
+name: Проверки проекта
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Установка зависимостей и проверка стиля
+        run: make check
+      - name: Обучение модели и сравнение с правилами
+        run: make evaluate
+      - name: Запуск тестов
+        run: make test
+      - name: Остановка тестовых сервисов
+        run: docker compose --profile test stop test-db test-redis test-rabbitmq
+      - name: Запуск приложения
+        run: make up
+      - name: Проверка API и повторного прогона
+        run: make smoke
+      - name: Проверка восстановления после сбоев
+        run: make recovery
+      - uses: actions/upload-artifact@v4
+        with:
+          name: model-evaluation
+          path: artifacts/evaluation.json
+      - if: always()
+        name: Сохранение последних сообщений сервисов
+        run: docker compose --profile test logs --tail=100
+      - if: always()
+        name: Удаление временного стенда CI
+        run: docker compose --profile test down -v
