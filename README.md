@@ -1,5 +1,7 @@
 # SignalWatch
 
+[![Проверки проекта](https://github.com/dasferwer/signal-watch/actions/workflows/ci.yml/badge.svg)](https://github.com/dasferwer/signal-watch/actions/workflows/ci.yml)
+
 Сервис анализирует события входа, регистрации и использования API. Он считает признаки за временные окна, сравнивает правила с Isolation Forest и сохраняет каждое решение вместе с признаками, порогами и версией модели. Оператор может отметить ложную тревогу, а повторный прогон проверяет воспроизводимость решений.
 
 Это задание 14 из плана портфолио, папка 23. Стек: Python 3.12, FastAPI, PostgreSQL 17, RabbitMQ 4.1, Redis 7.4, scikit-learn, SQLAlchemy, Alembic и Docker Compose.
