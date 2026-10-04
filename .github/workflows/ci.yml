@@ -11,8 +11,12 @@ jobs:
         run: make check
       - name: Обучение модели и сравнение с правилами
         run: make evaluate
+      - name: Проверки защиты без подключения
+        run: uv run pytest --noconftest -p no:cacheprovider tests/test_fixture_safety.py
       - name: Запуск тестов
         run: make test
+      - name: Проверка защиты тестового образа
+        run: uv run pytest -q scripts/test_test_entrypoint.py
       - name: Остановка тестовых сервисов
         run: docker compose --profile test stop test-db test-redis test-rabbitmq
       - name: Запуск приложения

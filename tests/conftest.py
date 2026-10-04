@@ -1,8 +1,18 @@
+# ruff: noqa: E402
+import pytest
+
+from signalwatch.test_safety import UnsafeTestEnvironment, ensure_test_environment
+
+# Проверяем окружение раньше settings/engine и регистрации любых fixtures.
+try:
+    ensure_test_environment()
+except UnsafeTestEnvironment as exc:
+    raise pytest.UsageError(str(exc)) from None
+
 from urllib.parse import urlparse
 from uuid import uuid4
 
 import httpx
-import pytest
 from sqlalchemy.engine import make_url
 
 from signalwatch.cache import WindowCache

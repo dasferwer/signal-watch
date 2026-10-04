@@ -1,0 +1,19 @@
+{
+  "stage": "E",
+  "checked_at": "2026-10-04T14:34:43.161488+00:00",
+  "scope": "Защита выделенных тестовых endpoints до импорта приложения, миграций и очистки.",
+  "pytest_suite": {
+    "passed": 124,
+    "skipped": 3,
+    "command": "docker compose --profile test run --rm test"
+  },
+  "test_image_entrypoint": {
+    "red_without_preflight": 2,
+    "green_with_preflight": 2,
+    "command": "pytest -q scripts/test_test_entrypoint.py"
+  },
+  "offline_safety": "Ошибочные env/URL отказывают до settings/engine; subprocess запрещает сеть и побочные процессы. Штатный профиль собирается без подключения.",
+  "migration_check": "Отдельного check_migration.py нет; миграции выполнены перед полным suite.",
+  "isolation": "Собственный Compose namespace только с test-сервисами; созданные ресурсы удалены.",
+  "limits": "Этап не изменяет обычный runtime и не доказывает production SLA/backup/HA."
+}

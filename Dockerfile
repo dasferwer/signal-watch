@@ -28,6 +28,7 @@ RUN --mount=type=bind,from=builder,source=/wheels,target=/wheels pip install --n
 COPY pyproject.toml ./
 COPY tests ./tests
 USER app
+ENTRYPOINT ["./scripts/test-entrypoint.sh"]
 CMD ["sh", "-c", "alembic upgrade head && pytest"]
 
 FROM runtime AS final
